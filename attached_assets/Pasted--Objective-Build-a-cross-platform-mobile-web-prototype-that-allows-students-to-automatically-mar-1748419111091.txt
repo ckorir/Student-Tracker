@@ -1,0 +1,109 @@
+🧩 Objective:
+
+Build a cross-platform mobile/web prototype that allows students to automatically mark attendance when they are in close proximity to a BLE beacon installed in a classroom. The app should simulate BLE detection and mark attendance only when the user is within range.
+
+🔧 Tech Stack Recommendations:
+
+Frontend (Mobile/Web):
+
+Replit: ReactJS (or Replit Mobile App template with Expo)
+
+UI Library: TailwindCSS / Material UI
+
+Backend:
+
+Replit: Flask or Node.js (Express)
+
+Authentication: Firebase or simple JWT-based login
+
+Database: Firebase Firestore / Replit DB / MongoDB
+
+📦 Key Features to Implement:
+
+Student Login
+
+Simple username/password auth (JWT or Firebase)
+
+Each student gets a unique device ID
+
+BLE Proximity Simulation
+
+Use mock BLE signal data (simulate range with a toggle or slider)
+
+Define a proximity_threshold to mark attendance
+
+Attendance Marking
+
+Trigger backend endpoint POST /mark-attendance
+
+Include timestamp, student ID, proximity data
+
+Prevent duplicate entries for the same class period
+
+Faculty Dashboard
+
+View live attendance per room
+
+Download CSV reports
+
+Admin override for manual entries
+
+Security
+
+End-to-end encryption on submissions (JWT + HTTPS)
+
+Logs must be immutable and timestamped
+
+🧪 Stretch Goals:
+
+GPS + BLE hybrid validation (mock GPS coords)
+
+Role-based access (student, faculty, admin)
+
+QR fallback mode for marking attendance manually
+
+Analytics dashboard (heatmap of attendance)
+
+🔐 Sample Data Schema:
+
+json
+Copy
+Edit
+// Student
+{
+  "id": "stu123",
+  "name": "Jane Doe",
+  "device_id": "ABC-XYZ-123",
+  "role": "student"
+}
+
+// Attendance Record
+{
+  "student_id": "stu123",
+  "timestamp": "2025-05-28T10:00:00Z",
+  "proximity": 2.3,
+  "method": "BLE",
+  "room_id": "RoomA"
+}
+🧠 Tips for Building in Replit:
+
+Use React or React Native + Expo for BLE simulation UI.
+
+Set up Flask backend with REST endpoints.
+
+Add environment variables in .env for auth secrets.
+
+Use localStorage for session handling in frontend.
+
+📥 Starter File Suggestions:
+
+App.jsx – Frontend logic and simulation
+
+server.py or index.js – API endpoints
+
+db.json or firestore.js – Database connection
+
+auth.js – Login/session logic
+
+dashboard.jsx – Admin dashboard view
+
