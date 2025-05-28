@@ -205,6 +205,13 @@ export function FacultyDashboard({ onClose }: FacultyDashboardProps) {
                   <Download className="h-4 w-4 mr-2" />
                   Export CSV
                 </Button>
+                <Button 
+                  onClick={() => setShowReportGenerator(true)}
+                  variant="default"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Generate Report
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -287,6 +294,11 @@ export function FacultyDashboard({ onClose }: FacultyDashboardProps) {
           </CardContent>
         </Card>
       </main>
+
+      {/* Report Generator Modal */}
+      {showReportGenerator && (
+        <ReportGenerator onClose={() => setShowReportGenerator(false)} />
+      )}
     </div>
   );
 }
