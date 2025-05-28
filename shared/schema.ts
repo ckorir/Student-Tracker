@@ -46,6 +46,9 @@ export const insertRoomSchema = createInsertSchema(rooms);
 export const insertAttendanceSchema = createInsertSchema(attendanceRecords).omit({
   id: true,
   timestamp: true,
+}).extend({
+  method: z.string().optional(),
+  status: z.string().optional(),
 });
 
 export const loginSchema = z.object({

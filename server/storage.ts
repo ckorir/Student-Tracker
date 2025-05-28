@@ -150,6 +150,8 @@ export class MemStorage implements IStorage {
       ...insertAttendance,
       id,
       timestamp: new Date(),
+      method: insertAttendance.method || "BLE",
+      status: insertAttendance.status || "present",
       isValid: true,
     };
     this.attendanceRecords.set(id, attendance);

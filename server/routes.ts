@@ -109,6 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Attendance routes
   app.post("/api/attendance/mark", authenticateToken, async (req: any, res) => {
     try {
+      console.log("Attendance request body:", req.body);
       const attendanceData = insertAttendanceSchema.parse(req.body);
       
       // Validate proximity threshold (3 meters max)
@@ -145,7 +146,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(attendance);
     } catch (error) {
-      res.status(400).json({ message: "Invalid attendance data" });
+      console.error("Attendance marking error:", error);
+      res.status(400).json({ message: "Invalid attendance data", error: error.message });
     }
   });
 
