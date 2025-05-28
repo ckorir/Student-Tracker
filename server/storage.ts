@@ -115,11 +115,13 @@ export class DatabaseStorage implements IStorage {
       .orderBy(attendanceRecords.timestamp);
   }
 
-  async createAttendance(insertAttendance: InsertAttendance): Promise<AttendanceRecord> {
+  async createAttendance(insertAttendance: any): Promise<AttendanceRecord> {
     const [attendance] = await db
       .insert(attendanceRecords)
       .values({
-        ...insertAttendance,
+        studentId: insertAttendance.studentId,
+        roomId: insertAttendance.roomId,
+        proximity: insertAttendance.proximity,
         method: insertAttendance.method || "BLE",
         status: insertAttendance.status || "present",
       })
