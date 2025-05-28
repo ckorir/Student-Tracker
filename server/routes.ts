@@ -109,14 +109,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Attendance routes
   app.post("/api/attendance/mark", authenticateToken, async (req: any, res) => {
     try {
-      console.log("Attendance request body:", req.body);
-      console.log("User ID:", req.user.id);
+      const { roomId, proximity, method = "BLE", status = "present" } = req.body;
       
-      // Bypass validation temporarily to see the actual data
-      const attendanceData = req.body;
-      
+      // Basic validation
+      if (!roomId || proximity === undefined) {
+        return res.status(400).json({ 
+          message: "Room ID and proximity are required" 
+        });
+      }
+
       // Validate proximity threshold (3 meters max)
-      if (attendanceData.proximity > 3.0) {
+      if (proximity > 3.0) {
         return res.status(400).json({ 
           message: "You must be within 3 meters of the beacon to mark attendance" 
         });
@@ -126,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const today = new Date();
       const isDuplicate = await storage.checkDuplicateAttendance(
         req.user.id, 
-        attendanceData.roomId, 
+        roomId, 
         today
       );
 
@@ -137,21 +140,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate room exists
-      const room = await storage.getRoom(attendanceData.roomId);
+      const room = await storage.getRoom(roomId);
       if (!room) {
         return res.status(404).json({ message: "Room not found" });
       }
 
       const attendance = await storage.createAttendance({
-        ...attendanceData,
+        roomId,
+        proximity,
+        method,
+        status,
         studentId: req.user.id,
       });
 
       res.status(201).json(attendance);
     } catch (error) {
       console.error("Attendance marking error:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
-      res.status(400).json({ message: "Invalid attendance data", error: error.message || String(error) });
+      res.status(500).json({ message: "Server error while marking attendance" });
     }
   });
 
