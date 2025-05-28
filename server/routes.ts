@@ -147,7 +147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(attendance);
     } catch (error) {
       console.error("Attendance marking error:", error);
-      res.status(400).json({ message: "Invalid attendance data", error: error.message });
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      res.status(400).json({ message: "Invalid attendance data", error: error.message || String(error) });
     }
   });
 
