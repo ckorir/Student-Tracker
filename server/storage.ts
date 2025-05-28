@@ -11,6 +11,8 @@ import {
   type InsertAttendance,
   type Session
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -37,95 +39,62 @@ export interface IStorage {
   deleteSession(token: string): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private rooms: Map<string, Room>;
-  private attendanceRecords: Map<number, AttendanceRecord>;
-  private sessions: Map<string, Session>;
-  private currentUserId: number;
-  private currentAttendanceId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.rooms = new Map();
-    this.attendanceRecords = new Map();
-    this.sessions = new Map();
-    this.currentUserId = 1;
-    this.currentAttendanceId = 1;
-    
-    this.seedData();
-  }
-
-  private seedData() {
-    // Seed default users
-    const defaultUsers = [
-      { username: "STU12345", password: "password123", name: "Jane Doe", role: "student", deviceId: "ABC-XYZ-123" },
-      { username: "STU12346", password: "password123", name: "John Smith", role: "student", deviceId: "DEF-ABC-456" },
-      { username: "FAC001", password: "faculty123", name: "Dr. Williams", role: "faculty", deviceId: null },
-    ];
-
-    defaultUsers.forEach(user => {
-      const id = this.currentUserId++;
-      this.users.set(id, { ...user, id });
-    });
-
-    // Seed default rooms
-    const defaultRooms = [
-      { id: "room-a", name: "Computer Science Lab", beaconId: "BEACON-CS-001", isActive: true },
-      { id: "room-b", name: "Physics Lab", beaconId: "BEACON-PH-002", isActive: true },
-      { id: "room-c", name: "Main Auditorium", beaconId: "BEACON-AU-003", isActive: true },
-    ];
-
-    defaultRooms.forEach(room => {
-      this.rooms.set(room.id, room);
-    });
-  }
-
+export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   // Room methods
   async getRoom(id: string): Promise<Room | undefined> {
-    return this.rooms.get(id);
+    const [room] = await db.select().from(rooms).where(eq(rooms.id, id));
+    return room || undefined;
   }
 
   async getAllRooms(): Promise<Room[]> {
-    return Array.from(this.rooms.values()).filter(room => room.isActive);
+    return await db.select().from(rooms).where(eq(rooms.isActive, true));
   }
 
   async createRoom(room: InsertRoom): Promise<Room> {
-    this.rooms.set(room.id, room);
-    return room;
+    const [newRoom] = await db
+      .insert(rooms)
+      .values(room)
+      .returning();
+    return newRoom;
   }
 
   // Attendance methods
   async getAttendanceRecord(id: number): Promise<AttendanceRecord | undefined> {
-    return this.attendanceRecords.get(id);
+    const [record] = await db.select().from(attendanceRecords).where(eq(attendanceRecords.id, id));
+    return record || undefined;
   }
 
   async getAttendanceByStudent(studentId: number): Promise<AttendanceRecord[]> {
-    return Array.from(this.attendanceRecords.values())
-      .filter(record => record.studentId === studentId)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return await db.select()
+      .from(attendanceRecords)
+      .where(eq(attendanceRecords.studentId, studentId))
+      .orderBy(attendanceRecords.timestamp);
   }
 
   async getAttendanceByRoom(roomId: string): Promise<AttendanceRecord[]> {
-    return Array.from(this.attendanceRecords.values())
-      .filter(record => record.roomId === roomId)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return await db.select()
+      .from(attendanceRecords)
+      .where(eq(attendanceRecords.roomId, roomId))
+      .orderBy(attendanceRecords.timestamp);
   }
 
   async getAttendanceByRoomAndDate(roomId: string, date: Date): Promise<AttendanceRecord[]> {
@@ -134,27 +103,27 @@ export class MemStorage implements IStorage {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    return Array.from(this.attendanceRecords.values())
-      .filter(record => {
-        const recordDate = new Date(record.timestamp);
-        return record.roomId === roomId && 
-               recordDate >= startOfDay && 
-               recordDate <= endOfDay;
-      })
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return await db.select()
+      .from(attendanceRecords)
+      .where(
+        and(
+          eq(attendanceRecords.roomId, roomId),
+          gte(attendanceRecords.timestamp, startOfDay),
+          lte(attendanceRecords.timestamp, endOfDay)
+        )
+      )
+      .orderBy(attendanceRecords.timestamp);
   }
 
   async createAttendance(insertAttendance: InsertAttendance): Promise<AttendanceRecord> {
-    const id = this.currentAttendanceId++;
-    const attendance: AttendanceRecord = {
-      ...insertAttendance,
-      id,
-      timestamp: new Date(),
-      method: insertAttendance.method || "BLE",
-      status: insertAttendance.status || "present",
-      isValid: true,
-    };
-    this.attendanceRecords.set(id, attendance);
+    const [attendance] = await db
+      .insert(attendanceRecords)
+      .values({
+        ...insertAttendance,
+        method: insertAttendance.method || "BLE",
+        status: insertAttendance.status || "present",
+      })
+      .returning();
     return attendance;
   }
 
@@ -165,24 +134,28 @@ export class MemStorage implements IStorage {
 
   // Session methods
   async createSession(sessionData: Omit<Session, 'id'>): Promise<Session> {
-    const id = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const session: Session = { ...sessionData, id };
-    this.sessions.set(sessionData.token, session);
+    const [session] = await db
+      .insert(sessions)
+      .values({
+        id: `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ...sessionData,
+      })
+      .returning();
     return session;
   }
 
   async getSession(token: string): Promise<Session | undefined> {
-    const session = this.sessions.get(token);
+    const [session] = await db.select().from(sessions).where(eq(sessions.token, token));
     if (session && new Date() > session.expiresAt) {
-      this.sessions.delete(token);
+      await db.delete(sessions).where(eq(sessions.token, token));
       return undefined;
     }
-    return session;
+    return session || undefined;
   }
 
   async deleteSession(token: string): Promise<void> {
-    this.sessions.delete(token);
+    await db.delete(sessions).where(eq(sessions.token, token));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
