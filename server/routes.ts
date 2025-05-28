@@ -107,28 +107,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Attendance routes
-  app.post("/api/attendance/mark", authenticateToken, async (req: any, res) => {
-    console.log("=== ATTENDANCE MARK REQUEST ===");
-    console.log("Request body:", JSON.stringify(req.body, null, 2));
-    console.log("User:", req.user);
+  app.post("/api/attendance/mark", async (req: any, res) => {
+    console.log("=== ATTENDANCE ENDPOINT HIT ===");
+    console.log("Headers:", req.headers);
+    console.log("Body:", req.body);
     
+    // Check authentication manually
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+      console.log("No token provided");
+      return res.status(401).json({ message: 'Access token required' });
+    }
+
     try {
-      // Simple attendance creation - bypass all complex validation for now
+      const session = await storage.getSession(token);
+      if (!session) {
+        console.log("Invalid session");
+        return res.status(401).json({ message: 'Invalid or expired token' });
+      }
+
+      const user = await storage.getUser(session.userId);
+      if (!user) {
+        console.log("User not found");
+        return res.status(401).json({ message: 'User not found' });
+      }
+
+      console.log("User authenticated:", user.username);
+
+      // Create attendance record
       const attendance = await storage.createAttendance({
-        roomId: "room-a",
-        proximity: 2.5,
+        roomId: req.body.roomId || "room-a",
+        proximity: req.body.proximity || 2.5,
         method: "BLE",
         status: "present",
-        studentId: req.user.id,
+        studentId: user.id,
       });
 
-      console.log("Attendance created successfully:", attendance);
+      console.log("Attendance created:", attendance);
       res.status(201).json(attendance);
     } catch (error) {
-      console.error("=== ATTENDANCE ERROR ===");
       console.error("Error:", error);
-      console.error("Error stack:", error.stack);
-      res.status(500).json({ message: "Server error while marking attendance", error: String(error) });
+      res.status(500).json({ message: "Server error", error: String(error) });
     }
   });
 
