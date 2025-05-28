@@ -41,21 +41,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = loginSchema.parse(req.body);
+      console.log(`Login attempt for username: ${username}`);
       
       const user = await storage.getUserByUsername(username);
       if (!user) {
+        console.log(`User not found for username: ${username}`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       // For demo purposes, we're not hashing passwords
       // In production, use bcrypt.compare(password, user.password)
       if (password !== user.password) {
+        console.log(`Password mismatch for username: ${username}`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
+      console.log(`Creating session for user: ${user.id}`);
 
       await storage.createSession({
         userId: user.id,
@@ -64,8 +68,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const { password: _, ...userWithoutPassword } = user;
+      console.log(`Login successful for user: ${user.id}`);
       res.json({ user: userWithoutPassword, token });
     } catch (error) {
+      console.error("Login error:", error);
       res.status(400).json({ message: "Invalid request data" });
     }
   });
@@ -227,12 +233,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Gather attendance data for all selected rooms
       let allAttendanceData = [];
-      let roomNames = {};
+      const roomNames = await storage.getAllRooms().then(rooms => 
+        rooms.reduce((acc: Record<string, string>, room) => {
+          acc[room.id] = room.name;
+          return acc;
+        }, {} as Record<string, string>)
+      );
 
       for (const roomId of roomIds) {
         const room = await storage.getRoom(roomId);
         if (room) {
-          roomNames[roomId] = room.name;
           const records = await storage.getAttendanceByRoomAndDate(roomId, start);
           
           // Join with student data
