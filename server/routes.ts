@@ -106,6 +106,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint
+  app.post("/api/test", (req, res) => {
+    console.log("TEST ENDPOINT HIT!");
+    res.json({ message: "Test successful" });
+  });
+
   // Attendance routes
   app.post("/api/attendance/mark", async (req: any, res) => {
     console.log("=== ATTENDANCE ENDPOINT HIT ===");
@@ -204,6 +210,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(records);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch your attendance records" });
+    }
+  });
+
+  // Report generation endpoint
+  app.post("/api/reports/generate", authenticateToken, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'faculty') {
+        return res.status(403).json({ message: "Faculty access required" });
+      }
+
+      const { reportType, roomIds, startDate, endDate, format, includeAbsent, includeStats } = req.body;
+      
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      // Gather attendance data for all selected rooms
+      let allAttendanceData = [];
+      let roomNames = {};
+
+      for (const roomId of roomIds) {
+        const room = await storage.getRoom(roomId);
+        if (room) {
+          roomNames[roomId] = room.name;
+          const records = await storage.getAttendanceByRoomAndDate(roomId, start);
+          
+          // Join with student data
+          const recordsWithStudents = await Promise.all(
+            records.map(async (record) => {
+              const student = await storage.getUser(record.studentId);
+              return {
+                ...record,
+                student: student ? { id: student.id, name: student.name, username: student.username } : null,
+                roomName: room.name
+              };
+            })
+          );
+          
+          allAttendanceData.push(...recordsWithStudents);
+        }
+      }
+
+      // Generate CSV content
+      if (format === "csv") {
+        const headers = [
+          "Date",
+          "Time", 
+          "Room",
+          "Student ID",
+          "Student Name",
+          "Status",
+          "Method",
+          "Proximity (m)"
+        ];
+
+        if (includeStats) {
+          headers.push("Attendance Rate");
+        }
+
+        let csvContent = headers.join(",") + "\n";
+
+        // Add attendance records
+        allAttendanceData.forEach(record => {
+          const date = new Date(record.timestamp);
+          const row = [
+            date.toLocaleDateString(),
+            date.toLocaleTimeString(),
+            record.roomName,
+            record.student?.username || "Unknown",
+            record.student?.name || "Unknown",
+            record.status,
+            record.method,
+            record.proximity.toFixed(1)
+          ];
+
+          if (includeStats) {
+            row.push(""); // Placeholder for attendance rate
+          }
+
+          csvContent += row.map(field => `"${field}"`).join(",") + "\n";
+        });
+
+        // Add statistics summary if requested
+        if (includeStats) {
+          csvContent += "\n\nSUMMARY STATISTICS\n";
+          csvContent += "Room,Total Present,Total Records,Attendance Rate\n";
+          
+          for (const roomId of roomIds) {
+            const roomRecords = allAttendanceData.filter(r => r.roomId === roomId);
+            const presentCount = roomRecords.filter(r => r.status === "present" || r.status === "late").length;
+            const totalRecords = roomRecords.length;
+            const rate = totalRecords > 0 ? ((presentCount / totalRecords) * 100).toFixed(1) : "0";
+            
+            csvContent += `"${roomNames[roomId]}",${presentCount},${totalRecords},${rate}%\n`;
+          }
+        }
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="attendance_report_${start.toISOString().split('T')[0]}.csv"`);
+        res.send(csvContent);
+      } else {
+        // For now, only CSV is implemented
+        res.status(400).json({ message: "Only CSV format is currently supported" });
+      }
+
+    } catch (error) {
+      console.error("Report generation error:", error);
+      res.status(500).json({ message: "Failed to generate report" });
     }
   });
 

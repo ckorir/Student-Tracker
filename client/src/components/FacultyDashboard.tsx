@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { X, Download, UserCheck, UserX, PieChart, RefreshCw } from "lucide-react";
+import { X, Download, UserCheck, UserX, PieChart, RefreshCw, FileText } from "lucide-react";
 import { useRooms, useRoomAttendance, useAttendanceStats } from "@/hooks/use-attendance";
 import { useToast } from "@/hooks/use-toast";
+import { ReportGenerator } from "./ReportGenerator";
 import { cn } from "@/lib/utils";
 
 interface FacultyDashboardProps {
@@ -16,6 +17,7 @@ interface FacultyDashboardProps {
 export function FacultyDashboard({ onClose }: FacultyDashboardProps) {
   const [selectedRoomId, setSelectedRoomId] = useState("room-a");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showReportGenerator, setShowReportGenerator] = useState(false);
   
   const { data: rooms = [] } = useRooms();
   const { data: attendanceRecords = [], isLoading: attendanceLoading, refetch: refetchAttendance } = useRoomAttendance(selectedRoomId, selectedDate);
