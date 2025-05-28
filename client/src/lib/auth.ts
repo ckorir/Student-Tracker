@@ -1,4 +1,5 @@
 import { apiRequest } from "./queryClient";
+import { Room } from "@shared/schema";
 
 export interface User {
   id: number;
@@ -26,6 +27,15 @@ export const authApi = {
   getCurrentUser: async (): Promise<User> => {
     const response = await apiRequest("GET", "/api/auth/me");
     return response.json();
+  },
+
+  getRooms: async (): Promise<Room[]> => {
+    const response = await apiRequest("GET", "/api/rooms");
+    return response.json();
+  },
+
+  markAttendance: async (data: { roomId: string; status: string }): Promise<void> => {
+    await apiRequest("POST", "/api/attendance", data);
   },
 };
 

@@ -195,10 +195,16 @@ export function StudentApp({ user, onLogout, onOpenDashboard }: StudentAppProps)
                   <Button
                     onClick={handleMarkAttendance}
                     disabled={!canMarkAttendance || markAttendanceMutation.isPending}
-                    className="mark-attendance-button"
+                    className={cn(
+                      "w-40 h-40 rounded-full flex flex-col items-center justify-center text-center bg-primary text-primary-foreground transition-all duration-300 ease-in-out",
+                      "shadow-lg hover:shadow-xl hover:scale-105 transform-gpu",
+                      "disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-95",
+                      markAttendanceMutation.isPending && "animate-pulse"
+                    )}
                   >
-                    <span className="text-xl font-semibold">Mark</span>
-                    <span className="text-xl font-semibold">Attendance</span>
+                    <div className="space-y-2">
+                      <span className="text-xl font-bold tracking-wide">Mark <br />Attendance</span>
+                    </div>
                   </Button>
                 </div>
               </div>
