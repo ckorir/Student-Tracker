@@ -48,7 +48,24 @@ export const getQueryFn: <T>(options: {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const res = await fetch(`${API_BASE_URL}${queryKey[0] as string}`, {
+    // Handle path parameters
+    let url = queryKey[0] as string;
+    if (queryKey.length > 1) {
+      // For stats endpoint, we need to construct the URL differently
+      if (url === "/api/analytics/stats") {
+        url = `/api/analytics/stats/${queryKey[1]}`;
+        if (queryKey.length > 2) {
+          url += `?date=${queryKey[2]}`;
+        }
+      } else {
+        url = url.replace(':roomId', queryKey[1] as string);
+        if (queryKey.length > 2) {
+          url += `?date=${queryKey[2]}`;
+        }
+      }
+    }
+
+    const res = await fetch(`${API_BASE_URL}${url}`, {
       credentials: "include",
       headers,
     });

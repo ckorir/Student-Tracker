@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, UserCheck, UserX, PieChart, RefreshCw, FileText, LogOut } from "lucide-react";
+import { Download, UserCheck, UserX, PieChart, RefreshCw, FileText, LogOut, Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { useRooms, useRoomAttendance, useAttendanceStats } from "@/hooks/use-attendance";
 import { User } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -20,11 +22,17 @@ export function FacultyDashboard({ onLogout, user }: FacultyDashboardProps) {
   const [selectedRoomId, setSelectedRoomId] = useState("room-a");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showReportGenerator, setShowReportGenerator] = useState(false);
-  
+
   const { data: rooms = [] } = useRooms();
   const { data: attendanceRecords = [], isLoading: attendanceLoading, refetch: refetchAttendance } = useRoomAttendance(selectedRoomId, selectedDate);
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useAttendanceStats(selectedRoomId, selectedDate);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // When date changes, refetch data
+    refetchAttendance();
+    refetchStats();
+  }, [selectedDate]);
 
   const selectedRoom = rooms.find(room => room.id === selectedRoomId);
 
@@ -198,8 +206,26 @@ export function FacultyDashboard({ onLogout, user }: FacultyDashboardProps) {
                 <h3 className="text-lg font-semibold text-foreground">Room Monitor</h3>
                 <p className="text-sm text-muted-foreground">Select a room to view live attendance</p>
               </div>
-              <div className="flex gap-3">
-                <Select value={selectedRoomId} onValueChange={setSelectedRoomId}>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={selectedDate.toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    const date = new Date(e.target.value);
+                    setSelectedDate(date);
+                    refetchAttendance();
+                    refetchStats();
+                  }}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <Select 
+                  value={selectedRoomId} 
+                  onValueChange={(value) => {
+                    setSelectedRoomId(value);
+                    refetchAttendance();
+                    refetchStats();
+                  }}
+                >
                   <SelectTrigger className="min-w-[200px]">
                     <SelectValue placeholder="Select a room" />
                   </SelectTrigger>

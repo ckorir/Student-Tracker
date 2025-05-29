@@ -181,6 +181,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/analytics/stats/:roomId", authenticateToken, async (req: any, res) => {
+    try {
+      // Only faculty can view room attendance
+      if (req.user.role !== 'faculty') {
+        return res.status(403).json({ message: "Faculty access required" });
+      }
+
+      const roomId = req.params.roomId;
+      const date = req.query.date ? new Date(req.query.date as string) : new Date();
+
+      // Get all attendance records for the room and date
+      const records = await storage.getAttendanceByRoomAndDate(roomId, date);
+
+      // Calculate statistics
+      const stats = {
+        present: records.filter(r => r.status === "present").length,
+        late: records.filter(r => r.status === "late").length,
+        absent: records.filter(r => r.status === "absent").length,
+        total: records.length,
+        attendanceRate: `${Math.round((records.filter(r => r.status === "present").length / records.length) * 100)}%`
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Stats error:", error);
+      res.status(500).json({ message: "Failed to fetch attendance statistics" });
+    }
+  });
+
   app.get("/api/attendance/room/:roomId", authenticateToken, async (req: any, res) => {
     try {
       // Only faculty can view room attendance
