@@ -201,61 +201,73 @@ export function FacultyDashboard({ onLogout, user }: FacultyDashboardProps) {
         {/* Room Selection and Controls */}
         <Card>
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Room Monitor</h3>
-                <p className="text-sm text-muted-foreground">Select a room to view live attendance</p>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="date"
-                  value={selectedDate.toISOString().split('T')[0]}
-                  onChange={(e) => {
-                    const date = new Date(e.target.value);
-                    setSelectedDate(date);
-                    refetchAttendance();
-                    refetchStats();
-                  }}
-                  className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-                <Select 
-                  value={selectedRoomId} 
-                  onValueChange={(value) => {
-                    setSelectedRoomId(value);
-                    refetchAttendance();
-                    refetchStats();
-                  }}
-                >
-                  <SelectTrigger className="min-w-[200px]">
-                    <SelectValue placeholder="Select a room" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rooms.map((room) => (
-                      <SelectItem key={room.id} value={room.id}>
-                        {room.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  onClick={handleRefresh}
-                  disabled={attendanceLoading}
-                >
-                  <RefreshCw className={cn("h-4 w-4 mr-2", attendanceLoading && "animate-spin")} />
-                  Refresh
-                </Button>
-                <Button onClick={handleExportCSV}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export CSV
-                </Button>
-                <Button 
-                  onClick={() => setShowReportGenerator(true)}
-                  variant="default"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Generate Report
-                </Button>
+            <div className="space-y-4 md:space-y-0">
+              <div className="flex flex-col md:flex-col lg:flex-row gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Room Monitor</h3>
+                  <p className="text-sm text-muted-foreground">Select a room to view live attendance</p>
+                </div>
+                <div className="flex flex-col md:flex-col lg:flex-row gap-4 w-full">
+                  <div className="flex flex-col md:flex-col lg:flex-row gap-2 w-full">
+                    <div className="w-full">
+                      <input
+                        type="date"
+                        value={selectedDate.toISOString().split('T')[0]}
+                        onChange={(e) => {
+                          const date = new Date(e.target.value);
+                          setSelectedDate(date);
+                          refetchAttendance();
+                          refetchStats();
+                        }}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                    </div>
+                    <div className="w-full">
+                      <Select 
+                        value={selectedRoomId} 
+                        onValueChange={(value) => {
+                          setSelectedRoomId(value);
+                          refetchAttendance();
+                          refetchStats();
+                        }}
+                      >
+                        <SelectTrigger className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                          <SelectValue placeholder="Select a room" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {rooms.map((room) => (
+                            <SelectItem key={room.id} value={room.id}>
+                              {room.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex flex-col md:flex-col lg:flex-row gap-2 w-full">
+                    <Button
+                      variant="outline"
+                      onClick={handleRefresh}
+                      disabled={attendanceLoading}
+                      className="w-full"
+                    >
+                      <RefreshCw className={cn("h-4 w-4 mr-2", attendanceLoading && "animate-spin")} />
+                      Refresh
+                    </Button>
+                    <Button onClick={handleExportCSV} className="w-full">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export CSV
+                    </Button>
+                    <Button 
+                      onClick={() => setShowReportGenerator(true)}
+                      variant="default"
+                      className="w-full"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generate Report
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
