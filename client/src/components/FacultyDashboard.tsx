@@ -4,17 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { X, Download, UserCheck, UserX, PieChart, RefreshCw, FileText } from "lucide-react";
+import { Download, UserCheck, UserX, PieChart, RefreshCw, FileText, LogOut } from "lucide-react";
 import { useRooms, useRoomAttendance, useAttendanceStats } from "@/hooks/use-attendance";
+import { User } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { ReportGenerator } from "./ReportGenerator";
 import { cn } from "@/lib/utils";
 
 interface FacultyDashboardProps {
-  onClose: () => void;
+  onLogout: () => void;
+  user: User;
 }
 
-export function FacultyDashboard({ onClose }: FacultyDashboardProps) {
+export function FacultyDashboard({ onLogout, user }: FacultyDashboardProps) {
   const [selectedRoomId, setSelectedRoomId] = useState("room-a");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showReportGenerator, setShowReportGenerator] = useState(false);
@@ -111,18 +113,34 @@ export function FacultyDashboard({ onClose }: FacultyDashboardProps) {
       {/* Header */}
       <header className="bg-card border-b border-border px-4 py-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Faculty Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Real-time attendance monitoring</p>
+          <div className="flex items-center space-x-3">
+            <div className="bg-primary rounded-full w-8 h-8 flex items-center justify-center">
+              <span className="text-primary-foreground font-medium text-sm">
+                {getInitials(user.name)}
+              </span>
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold">{user.name}</h1>
+              <p className="text-sm text-muted-foreground">{user.username}</p>
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="text-muted-foreground hover:text-primary"
-          >
-            <X className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowReportGenerator(true)}
+            >
+              <FileText className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onLogout}
+              className="text-destructive hover:text-destructive/90"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
 

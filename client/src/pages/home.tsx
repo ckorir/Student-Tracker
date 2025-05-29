@@ -3,18 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { AuthModal } from "@/components/AuthModal";
 import { StudentApp } from "@/components/StudentApp";
 import { FacultyDashboard } from "@/components/FacultyDashboard";
-import { authApi, isAuthenticated, removeAuthToken, getAuthToken } from "@/lib/auth";
+import { authApi, isAuthenticated, removeAuthToken, getAuthToken, User } from "@/lib/auth";
 import { getQueryFn } from "@/lib/queryClient";
 
 export default function Home() {
   const [showAuth, setShowAuth] = useState(!isAuthenticated());
   const [currentView, setCurrentView] = useState<"student" | "faculty">("student");
 
-  const { data: user, isLoading, error } = useQuery({
+  const { data: userData, isLoading, error } = useQuery({
     queryKey: ["/api/auth/me"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: isAuthenticated(),
   });
+
+  const user = userData as User | null;
 
   useEffect(() => {
     // If there's a token but user fetch fails, show auth
@@ -51,30 +53,25 @@ export default function Home() {
     setCurrentView("student");
   };
 
-  // Show loading state while checking authentication
-  if (isAuthenticated() && isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (showAuth) {
+    return <AuthModal isOpen={showAuth} onSuccess={handleAuthSuccess} />;
   }
 
-  // Show auth modal if not authenticated or no user data
-  if (showAuth || !user) {
-    return <AuthModal isOpen={true} onSuccess={handleAuthSuccess} />;
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  // Show appropriate view based on current state
-  if (currentView === "faculty") {
-    return <FacultyDashboard onClose={handleCloseDashboard} />;
+  if (!user) {
+    return null;
   }
 
   return (
-    <StudentApp 
-      user={user} 
-      onLogout={handleLogout}
-      onOpenDashboard={handleOpenDashboard}
-    />
+    <div className="container mx-auto p-4">
+      {user.role === "faculty" ? (
+        <FacultyDashboard user={user} onLogout={handleLogout} />
+      ) : (
+        <StudentApp user={user} onLogout={handleLogout} />
+      )}
+    </div>
   );
 }

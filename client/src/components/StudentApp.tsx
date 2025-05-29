@@ -12,10 +12,9 @@ import { cn } from "@/lib/utils";
 interface StudentAppProps {
   user: User;
   onLogout: () => void;
-  onOpenDashboard: () => void;
 }
 
-export function StudentApp({ user, onLogout, onOpenDashboard }: StudentAppProps) {
+export function StudentApp({ user, onLogout }: StudentAppProps) {
   const { data: rooms = [] } = useRooms();
   const { data: attendanceHistory = [] } = useMyAttendance();
   const markAttendanceMutation = useMarkAttendance();
@@ -103,16 +102,6 @@ export function StudentApp({ user, onLogout, onOpenDashboard }: StudentAppProps)
             <p className="text-sm text-muted-foreground">{user.name} - {user.username}</p>
           </div>
           <div className="flex items-center space-x-3">
-            {user.role === "faculty" && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onOpenDashboard}
-                className="text-muted-foreground hover:text-primary"
-              >
-                <BarChart3 className="h-5 w-5" />
-              </Button>
-            )}
             <Button
               variant="ghost"
               size="icon"
