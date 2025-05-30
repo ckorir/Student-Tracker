@@ -356,5 +356,6 @@ export function FacultyDashboard({ onLogout, user }: FacultyDashboardProps) {
         <ReportGenerator onClose={() => setShowReportGenerator(false)} />
       )}
     </div>
+    
   );
 }
