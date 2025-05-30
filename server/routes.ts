@@ -119,6 +119,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Attendance routes
+  app.get("/api/attendance/room/:roomId", authenticateToken, async (req: any, res) => {
+    try {
+      // Only faculty can view room attendance
+      if (req.user.role !== 'faculty') {
+        return res.status(403).json({ message: "Faculty access required" });
+      }
+
+      const roomId = req.params.roomId;
+      const date = req.query.date ? new Date(req.query.date as string) : new Date();
+
+      const records = await storage.getAttendanceByRoomAndDate(roomId, date);
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch attendance records" });
+    }
+  });
+
   app.post("/api/attendance/mark", async (req: any, res) => {
     console.log("=== ATTENDANCE ENDPOINT HIT ===");
     console.log("Headers:", req.headers);

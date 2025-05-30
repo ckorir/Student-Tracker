@@ -51,6 +51,10 @@ export const useRoomAttendance = (roomId: string, date?: Date) => {
   
   return useQuery<AttendanceRecord[]>({
     queryKey: ["/api/attendance/room", roomId, dateParam],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/attendance/room/${roomId}?date=${dateParam}`);
+      return response.json();
+    },
     enabled: !!roomId,
   });
 };
